@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="zh-TW" class="h-full bg-slate-50">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="Logo.png" type="image/png" sizes="64x64">
-    <title>CatBud 喵算記帳</title>
+    <like rel="manifest" href="manifest.json">
+    <title>MeowTabs 喵算記帳</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -27,10 +27,11 @@
             <div class="p-5 space-y-6">
                 <!-- Brand Header -->
                 <div class="flex items-center space-x-3.5 px-1 pt-1">
-                    <img src="Logo.png" alt="CatBud 喵算記帳 Logo" class="w-10 h-10 object-contain drop-shadow-sm"
+                    <img src="Logo.png" alt="MeowTabs 喵算記帳 Logo" class="w-10 h-10 object-contain drop-shadow-sm"
                         onerror="this.onerror=null; this.src='https://placehold.co/40x40/22c55e/ffffff?text=🐱';">
                     <div>
-                        <h1 class="text-xl font-black text-slate-900 tracking-tight leading-tight">CatBud 喵算記帳</h1>
+                        <h1 class="text-xl font-black text-slate-900 tracking-tight leading-tight">MeowTabs</h1>
+                        <p class="text-xs text-slate-500 font-medium tracking-tight">喵算記帳</p>
                     </div>
                 </div>
 
@@ -93,8 +94,7 @@
                     <!-- Total Balance -->
                     <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">淨結餘 (Total
-                                Balance)</span>
+                            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">淨結餘</span>
                             <div class="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
                                 <i data-lucide="coins" class="w-5 h-5"></i>
                             </div>
@@ -109,7 +109,7 @@
                     <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm">
                         <div class="flex items-center justify-between">
                             <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">本月收入
-                                (Income)</span>
+                                </span>
                             <div class="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
                                 <i data-lucide="trending-up" class="w-5 h-5"></i>
                             </div>
@@ -123,8 +123,7 @@
                     <!-- Monthly Expense -->
                     <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">本月支出
-                                (Expense)</span>
+                            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">本月支出</span>
                             <div class="p-2 bg-rose-50 text-rose-600 rounded-lg">
                                 <i data-lucide="trending-down" class="w-5 h-5"></i>
                             </div>
@@ -328,6 +327,33 @@
                         <span>資料本機離線安全保存</span>
                     </div>
                 </div>
+
+                <section class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4"
+                    aria-labelledby="account-heading">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
+                            <i data-lucide="user-round" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 id="account-heading" class="font-bold text-slate-800 text-base">Google 帳號</h3>
+                            <p id="auth-status" class="text-xs text-slate-500" role="status" aria-live="polite">
+                                正在確認登入狀態...</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <button id="google-sign-in" type="button"
+                            class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-all">
+                            使用 Google 登入
+                        </button>
+                        <button id="google-sign-out" type="button"
+                            class="hidden px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all">
+                            登出
+                        </button>
+                    </div>
+                    <p class="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl p-3">
+                        登入目前只用於確認帳號身份；記帳資料仍儲存在此瀏覽器，尚未同步到雲端。
+                    </p>
+                </section>
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <!-- 1. Budget Settings Card -->
@@ -568,7 +594,7 @@
                                 <i data-lucide="info" class="w-5 h-5"></i>
                             </div>
                             <div>
-                                <h3 class="font-bold text-slate-800 text-base">關於 CatBud 喵算記帳</h3>
+                                <h3 class="font-bold text-slate-800 text-base">關於 MeowTabs 喵算記帳</h3>
                                 <p class="text-xs text-slate-500">系統版本與離線隱私說明</p>
                             </div>
                         </div>
@@ -1022,6 +1048,7 @@
     </div>
 
     <script src="app.js"></script>
+    <script type="module" src="firebase-auth.js"></script>
 </body>
 
 </html>

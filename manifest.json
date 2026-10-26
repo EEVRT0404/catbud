@@ -1,6 +1,6 @@
 {
-    "name": "CatBud 喵算記帳",
-    "short_name": "CatBud 喵算記帳",
+    "name": "喵算記帳",
+    "short_name": "喵算記帳",
     "start_url": "./index.html",
     "display": "standalone",
     "description": "簡單記帳，輕鬆管理財務，提供多種視圖與圖表分析，讓記帳變得更輕鬆有趣。",

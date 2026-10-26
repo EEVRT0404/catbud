@@ -1,5 +1,5 @@
 // ==========================================
-// CatBud 喵算記帳 - 核心邏輯 (app.js)
+// MeowTabs 喵算記帳 - 核心邏輯 (app.js)
 // Ver. 2.1.0 (喵力升級版)
 // ==========================================
 
@@ -63,7 +63,7 @@ const MASCOT_QUOTES = {
             '生活需要講究，但記帳更要講究！',
             '冷靜消費，不被慾望支配，喵。'
         ],
-        highExpense: '注意！這筆支出金額可不小，確認真的是必需品嗎？喵。',
+        highExpense: '注意！這筆支出金額可不小，確認真的需要嗎？喵~',
         income: '收入增加是好事，不過要記得規劃一部分存下來喵。'
     }
 };
@@ -826,7 +826,7 @@ function exportCSV() {
     const url = URL.createObjectURL(blob);
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute("href", url);
-    downloadAnchor.setAttribute("download", `CatBud_記帳明細_${new Date().toISOString().slice(0, 10)}.csv`);
+    downloadAnchor.setAttribute("download", `MeowTabs_記帳明細_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -869,7 +869,7 @@ function exportData() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupObj, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `CatBud_財務備份_${new Date().toISOString().slice(0, 10)}.json`);
+    downloadAnchor.setAttribute("download", `MeowTabs_財務備份_${new Date().toISOString().slice(0, 10)}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
