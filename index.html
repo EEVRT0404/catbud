@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="h-full bg-slate-50">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="Logo.png" type="image/png" sizes="64x64">
+    <title>CatBud 喵算記帳</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="h-full bg-slate-50 text-slate-800 antialiased selection:bg-emerald-100 selection:text-emerald-800">
+
+    <div id="app-layout" class="app-layout min-h-screen flex flex-col">
+        <!-- Left Sidebar (Visible when aspect-ratio >= 4/3) -->
+        <aside id="app-sidebar"
+            class="app-sidebar bg-white border-r border-slate-200/80 z-30 flex-col justify-between shrink-0 shadow-sm custom-scrollbar select-none">
+            <!-- Sidebar Top Content -->
+            <div class="p-5 space-y-6">
+                <!-- Brand Header -->
+                <div class="flex items-center space-x-3.5 px-1 pt-1">
+                    <img src="Logo.png" alt="CatBud 喵算記帳 Logo" class="w-10 h-10 object-contain drop-shadow-sm"
+                        onerror="this.onerror=null; this.src='https://placehold.co/40x40/22c55e/ffffff?text=🐱';">
+                    <div>
+                        <h1 class="text-xl font-black text-slate-900 tracking-tight leading-tight">CatBud 喵算記帳</h1>
+                    </div>
+                </div>
+
+                <!-- Primary Action Button -->
+
+                <!-- Navigation Links -->
+                <nav class="space-y-2 pt-2">
+                    <button onclick="switchTab('dashboard')" id="nav-side-dashboard" tabindex="-1"
+                        class="nav-item-side w-full flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl text-sm font-bold text-emerald-600 transition-all focus:outline-none">
+                        <i data-lucide="home" class="w-5 h-5"></i>
+                        <span>首頁</span>
+                    </button>
+                    <button onclick="switchTab('transactions')" id="nav-side-transactions" tabindex="-1"
+                        class="nav-item-side w-full flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all focus:outline-none">
+                        <i data-lucide="list" class="w-5 h-5"></i>
+                        <span>明細</span>
+                    </button>
+                    <button onclick="openAddPage()" tabindex="-1"
+                        class="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-bold rounded-2xl shadow-lg shadow-emerald-600/25 flex items-center justify-center space-x-2.5 transition-all focus:outline-none"
+                        title="新增記帳紀錄">
+                        <i data-lucide="plus" class="w-5 h-5 stroke-[2.5]"></i>
+                        <span class="text-base tracking-wide">新增紀錄</span>
+                    </button>
+
+                    <button onclick="switchTab('analytics')" id="nav-side-analytics" tabindex="-1"
+                        class="nav-item-side w-full flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all focus:outline-none">
+                        <i data-lucide="pie-chart" class="w-5 h-5"></i>
+                        <span>圖表</span>
+                    </button>
+                    <button onclick="switchTab('settings')" id="nav-side-settings" tabindex="-1"
+                        class="nav-item-side w-full flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all focus:outline-none">
+                        <i data-lucide="settings" class="w-5 h-5"></i>
+                        <span>設定</span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Sidebar Bottom Copyright & Version -->
+            <div class="p-5 border-t border-slate-100 space-y-1 select-text">
+                <p class="text-sm font-semibold text-slate-700 tracking-tight select-text cursor-text"
+                    style="user-select: text; -webkit-user-select: text;">趙凱樂製作©2026版權所有</p>
+                <p class="text-sm text-slate-400 font-medium select-text cursor-text"
+                    style="user-select: text; -webkit-user-select: text;">Ver. 2.1.0</p>
+            </div>
+        </aside>
+
+
+
+        <!-- Main Content Container -->
+        <main class="app-main flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-36">
+
+            <!-- Toast Notification Area -->
+            <div id="toast-container" class="fixed top-20 right-4 z-50 flex flex-col gap-2"></div>
+
+            <!-- DASHBOARD TAB -->
+            <div id="tab-dashboard" class="tab-content space-y-6">
+
+                <!-- Summary Metric Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <!-- Total Balance -->
+                    <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">淨結餘 (Total
+                                Balance)</span>
+                            <div class="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                                <i data-lucide="coins" class="w-5 h-5"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <h2 id="total-balance" class="text-2xl sm:text-3xl font-bold text-slate-900">$0</h2>
+                            <p id="total-balance-sub" class="text-xs text-slate-500 mt-1">即時累計淨值</p>
+                        </div>
+                    </div>
+
+                    <!-- Monthly Income -->
+                    <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">本月收入
+                                (Income)</span>
+                            <div class="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                                <i data-lucide="trending-up" class="w-5 h-5"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <h2 id="monthly-income" class="text-2xl sm:text-3xl font-bold text-emerald-600">$0</h2>
+                            <p id="income-count" class="text-xs text-slate-500 mt-1">尚無收入紀錄</p>
+                        </div>
+                    </div>
+
+                    <!-- Monthly Expense -->
+                    <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">本月支出
+                                (Expense)</span>
+                            <div class="p-2 bg-rose-50 text-rose-600 rounded-lg">
+                                <i data-lucide="trending-down" class="w-5 h-5"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <h2 id="monthly-expense" class="text-2xl sm:text-3xl font-bold text-rose-600">$0</h2>
+                            <p id="expense-count" class="text-xs text-slate-500 mt-1">尚無支出紀錄</p>
+                        </div>
+                    </div>
+
+                    <!-- Monthly Budget Bar Card -->
+                    <div
+                        class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <span
+                                    class="text-xs font-semibold text-slate-500 uppercase tracking-wider">本月預算上限</span>
+                                <button onclick="openBudgetModal()"
+                                    class="text-xs text-emerald-600 hover:underline flex items-center">
+                                    <i data-lucide="settings" class="w-3 h-3 mr-1"></i>設定
+                                </button>
+                            </div>
+                            <div class="mt-2 flex justify-between items-baseline">
+                                <span id="budget-spent-text" class="text-lg font-bold text-slate-800">$0</span>
+                                <span id="budget-total-text" class="text-xs text-slate-500">/ $30,000</span>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                                <div id="budget-progress-bar"
+                                    class="bg-emerald-600 h-2.5 rounded-full transition-all duration-500"
+                                    style="width: 0%"></div>
+                            </div>
+                            <p id="budget-status-text" class="text-[11px] text-slate-500 mt-1.5 text-right">已使用 0%
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard Charts & Recent Transactions -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Main Category Doughnut -->
+                    <div
+                        class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm lg:col-span-1 flex flex-col justify-between">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="font-bold text-slate-800 flex items-center text-sm">
+                                <i data-lucide="pie-chart" class="w-4 h-4 mr-1.5 text-emerald-600"></i><span
+                                    id="dash-chart-title">本月分類統計</span>
+                            </h3>
+                            <!-- Income / Expense Toggle Buttons -->
+                            <div class="flex items-center p-0.5 bg-slate-100 rounded-lg text-xs font-medium">
+                                <button onclick="switchDashChartType('expense')" id="btn-dash-chart-expense"
+                                    class="px-2.5 py-1 rounded-md bg-white text-rose-600 shadow-sm transition-all">支出</button>
+                                <button onclick="switchDashChartType('income')" id="btn-dash-chart-income"
+                                    class="px-2.5 py-1 rounded-md text-slate-500 hover:text-slate-900 transition-all">收入</button>
+                            </div>
+                        </div>
+                        <div class="relative flex-1 flex items-center justify-center h-44 my-auto">
+                            <canvas id="dashboardCategoryChart"></canvas>
+                            <!-- Category Chart Empty Overlay -->
+                            <div id="dashboardCategoryEmpty"
+                                class="hidden absolute inset-0 flex flex-col items-center justify-center text-center p-2 text-slate-400">
+                                <div class="p-2 bg-slate-100 rounded-full mb-1">
+                                    <i data-lucide="inbox" class="w-5 h-5 text-slate-400"></i>
+                                </div>
+                                <p id="dashboardCategoryEmptyText" class="text-xs font-medium text-slate-500">
+                                    本月尚無支出紀錄</p>
+                                <p class="text-[10px] text-slate-400 mt-0.5">新增紀錄後將自動產生分類圖表</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Transactions Card -->
+                    <div
+                        class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm lg:col-span-2 flex flex-col justify-between">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-bold text-slate-800 flex items-center">
+                                <i data-lucide="clock" class="w-4 h-4 mr-2 text-emerald-600"></i>近期交易紀錄
+                            </h3>
+                            <button onclick="switchTab('transactions')"
+                                class="text-xs text-emerald-600 hover:underline font-medium">
+                                查看全部
+                            </button>
+                        </div>
+                        <div id="recent-transactions-list"
+                            class="space-y-3 flex-1 overflow-y-auto max-h-[260px] custom-scrollbar">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TRANSACTIONS TAB -->
+            <div id="tab-transactions" class="tab-content hidden space-y-6">
+                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
+                    <!-- Search & Filters Header -->
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                        <div class="relative flex-1">
+                            <i data-lucide="search"
+                                class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                            <input type="text" id="search-input" oninput="renderTransactions()" placeholder="搜尋描述或備註..."
+                                class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all">
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-2">
+                            <!-- Type Filter -->
+                            <select id="filter-type" onchange="renderTransactions()"
+                                class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                                <option value="all">所有類別 (全部)</option>
+                                <option value="expense">支出 (Expense)</option>
+                                <option value="income">收入 (Income)</option>
+                            </select>
+
+                            <!-- Category Filter -->
+                            <select id="filter-category" onchange="renderTransactions()"
+                                class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                                <option value="all">所有分類</option>
+                                <!-- Dynamically loaded -->
+                            </select>
+
+                            <!-- Month Filter -->
+                            <input type="month" id="filter-month" onchange="renderTransactions()"
+                                class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+
+                            <!-- Export/Import -->
+                            <button onclick="exportData()" title="匯出資料"
+                                class="p-2 border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl transition-all">
+                                <i data-lucide="download" class="w-4 h-4"></i>
+                            </button>
+                            <label title="匯入資料"
+                                class="p-2 border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl transition-all cursor-pointer">
+                                <i data-lucide="upload" class="w-4 h-4"></i>
+                                <input type="file" id="import-file" accept=".json" class="hidden"
+                                    onchange="importData(event)">
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Transactions Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr
+                                    class="border-b border-slate-200 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                                    <th class="pb-3 px-4">日期</th>
+                                    <th class="pb-3 px-4">類別與描述</th>
+                                    <th class="pb-3 px-4">支付方式</th>
+                                    <th class="pb-3 px-4 text-right">金額</th>
+                                    <th class="pb-3 px-4 text-center">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="full-transactions-list" class="divide-y divide-slate-100 text-sm">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ANALYTICS TAB -->
+            <div id="tab-analytics" class="tab-content hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Income vs Expense Bar Chart -->
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+                        <h3 class="font-bold text-slate-800 mb-4 flex items-center">
+                            <i data-lucide="bar-chart-3" class="w-4 h-4 mr-2 text-emerald-600"></i>每月收支趨勢
+                        </h3>
+                        <div class="relative h-64">
+                            <canvas id="monthlyTrendChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Expense Category Breakdown -->
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+                        <h3 class="font-bold text-slate-800 mb-4 flex items-center">
+                            <i data-lucide="pie-chart" class="w-4 h-4 mr-2 text-emerald-600"></i>支出項目比例
+                        </h3>
+                        <div class="relative h-48 flex items-center justify-center">
+                            <canvas id="analyticsCategoryChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SETTINGS TAB -->
+            <div id="tab-settings" class="tab-content hidden space-y-6">
+                <!-- Settings Header Banner -->
+                <div
+                    class="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-3xl p-6 text-white shadow-lg shadow-emerald-600/15 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div class="space-y-1">
+                        <div class="flex items-center space-x-2">
+                            <span class="p-1.5 bg-white/20 rounded-lg text-emerald-100"><i data-lucide="sliders"
+                                    class="w-5 h-5"></i></span>
+                            <h2 class="text-xl font-bold tracking-tight">個人化與系統設定</h2>
+                        </div>
+                        <p class="text-xs text-emerald-100 max-w-xl">自訂預算上限、分類項目、支付方式與喵星人風格，享受專屬於您的記帳體驗。</p>
+                    </div>
+                    <div
+                        class="flex items-center space-x-2 bg-white/10 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/20 text-xs font-medium">
+                        <i data-lucide="shield-check" class="w-4 h-4 text-emerald-300"></i>
+                        <span>資料本機離線安全保存</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- 1. Budget Settings Card -->
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <div class="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl">
+                                    <i data-lucide="target" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-slate-800 text-base">每月支出預算與警示</h3>
+                                    <p class="text-xs text-slate-500">規劃支出目標，掌握即時進度</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-3 pt-1">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1.5">每月預算金額 (<span
+                                        class="currency-symbol">NT$</span>)</label>
+                                <div class="flex gap-2">
+                                    <div
+                                        class="relative flex-1 flex items-center bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 focus-within:ring-2 focus-within:ring-emerald-500 focus-within:bg-white transition-all">
+                                        <span
+                                            class="currency-symbol-display text-slate-400 font-semibold text-sm mr-2 select-none shrink-0">$</span>
+                                        <input type="number" id="settings-budget-input" min="0" step="500"
+                                            class="w-full bg-transparent text-sm focus:outline-none font-semibold text-slate-800">
+                                    </div>
+                                    <button onclick="saveSettingsBudget()"
+                                        class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm rounded-xl shadow-sm transition-all whitespace-nowrap flex items-center gap-1.5">
+                                        <i data-lucide="check" class="w-4 h-4"></i>
+                                        <span>儲存預算</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1.5">預算超支警示門檻</label>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <button type="button" onclick="setBudgetAlertThreshold(70)" id="btn-threshold-70"
+                                        class="py-2 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 text-slate-700 transition-all">達
+                                        70% 提醒</button>
+                                    <button type="button" onclick="setBudgetAlertThreshold(80)" id="btn-threshold-80"
+                                        class="py-2 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 text-slate-700 transition-all">達
+                                        80% 警告</button>
+                                    <button type="button" onclick="setBudgetAlertThreshold(90)" id="btn-threshold-90"
+                                        class="py-2 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 text-slate-700 transition-all">達
+                                        90% 危險</button>
+                                </div>
+                            </div>
+
+                            <!-- Budget Insight Info Box -->
+                            <div id="settings-budget-insight"
+                                class="p-3 bg-emerald-50/70 border border-emerald-100 rounded-xl flex items-start gap-3">
+                                <i data-lucide="info" class="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>
+                                <div class="text-xs text-emerald-900 space-y-0.5">
+                                    <p class="font-semibold" id="budget-insight-summary">計算預算中...</p>
+                                    <p class="text-emerald-700" id="budget-insight-daily">剩餘每日預算試算</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Category Management Card -->
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <div class="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl">
+                                    <i data-lucide="tags" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-slate-800 text-base">自訂分類管理</h3>
+                                    <p class="text-xs text-slate-500">增修個人化支出與收入分類</p>
+                                </div>
+                            </div>
+                            <button onclick="openCategoryModal()"
+                                class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl text-xs font-bold transition-all flex items-center gap-1">
+                                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                <span>新增分類</span>
+                            </button>
+                        </div>
+
+                        <!-- Category Type Filter Tabs -->
+                        <div class="flex items-center p-1 bg-slate-100 rounded-xl">
+                            <button onclick="switchSettingsCategoryTab('expense')" id="settings-cat-tab-expense"
+                                class="flex-1 py-1.5 rounded-lg text-xs font-bold bg-white text-rose-600 shadow-sm transition-all">支出分類
+                                (<span id="cat-count-expense">0</span>)</button>
+                            <button onclick="switchSettingsCategoryTab('income')" id="settings-cat-tab-income"
+                                class="flex-1 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-900 transition-all">收入分類
+                                (<span id="cat-count-income">0</span>)</button>
+                        </div>
+
+                        <!-- Categories List Container -->
+                        <div id="settings-categories-list"
+                            class="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-1 custom-scrollbar">
+                            <!-- Populated dynamically -->
+                        </div>
+
+                        <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+                            <span class="text-[11px] text-slate-400">點選紅色垃圾桶可移除自訂分類</span>
+                            <button onclick="resetToDefaultCategories()"
+                                class="text-xs text-slate-500 hover:text-rose-600 transition-all flex items-center gap-1 font-medium">
+                                <i data-lucide="rotate-ccw" class="w-3 h-3"></i>
+                                <span>還原預設分類</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 3. Mascot & Preferences Card -->
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2.5 bg-amber-50 text-amber-600 rounded-xl">
+                                <i data-lucide="cat" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-base">個性化與喵咪伴侶</h3>
+                                <p class="text-xs text-slate-500">調整記帳習慣與貓咪伴侶性格</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                            <!-- Currency Symbol -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1.5">貨幣符號</label>
+                                <select id="pref-currency" onchange="savePreferences()"
+                                    class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                                    <option value="NT$">NT$ 新台幣 (TWD)</option>
+                                    <option value="HK$">HK$ 港幣 (HKD)</option>
+                                    <option value="$">$ 美元 (USD)</option>
+                                    <option value="¥">¥ 日圓 / 人民幣 (JPY/CNY)</option>
+                                    <option value="€">€ 歐元 (EUR)</option>
+                                </select>
+                            </div>
+
+                            <!-- Mascot Persona -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1.5">喵咪伴侶性格</label>
+                                <select id="pref-mascot" onchange="savePreferences()"
+                                    class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                                    <option value="orange">🐱 橘貓阿財 (樂天溫馨)</option>
+                                    <option value="calico">🐾 三花喵喵 (招財細心)</option>
+                                    <option value="black">🐈‍⬛ 黑貓吉吉 (嚴謹理財)</option>
+                                </select>
+                            </div>
+
+                            <!-- Default Transaction Type -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1.5">開啟記帳預設類型</label>
+                                <select id="pref-default-type" onchange="savePreferences()"
+                                    class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                                    <option value="expense">預設支出 (Expense)</option>
+                                    <option value="income">預設收入 (Income)</option>
+                                </select>
+                            </div>
+
+                            <!-- Default Payment Method -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1.5">預設常用支付方式</label>
+                                <select id="pref-default-payment" onchange="savePreferences()"
+                                    class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                                    <option value="現金">現金</option>
+                                    <option value="信用卡">信用卡</option>
+                                    <option value="行動支付">行動支付 (LINE Pay / 街口)</option>
+                                    <option value="銀行轉帳">銀行轉帳</option>
+                                    <option value="電子票證">悠遊卡 / 一卡通</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Data Backup, Restore & CSV Export Card -->
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
+                                <i data-lucide="database" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-base">資料備份與報表匯出</h3>
+                                <p class="text-xs text-slate-500">匯出 JSON 備份或 Excel/CSV 財務報表</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+                            <!-- Export JSON -->
+                            <button onclick="exportData()"
+                                class="flex flex-col items-center justify-center p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 transition-all gap-1.5">
+                                <i data-lucide="download" class="w-4 h-4 text-blue-600"></i>
+                                <span>匯出 JSON 備份</span>
+                            </button>
+                            <!-- Import JSON -->
+                            <label
+                                class="flex flex-col items-center justify-center p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 transition-all gap-1.5 cursor-pointer">
+                                <i data-lucide="upload" class="w-4 h-4 text-emerald-600"></i>
+                                <span>匯入 JSON 還原</span>
+                                <input type="file" accept=".json" class="hidden" onchange="importData(event)">
+                            </label>
+                            <!-- Export CSV -->
+                            <button onclick="exportCSV()"
+                                class="flex flex-col items-center justify-center p-3 bg-emerald-50/70 hover:bg-emerald-100/80 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-800 transition-all gap-1.5">
+                                <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600"></i>
+                                <span>匯出 CSV 報表</span>
+                            </button>
+                        </div>
+                        <p class="text-[11px] text-slate-400">CSV 報表包含 UTF-8 BOM 編碼，可直接用 Microsoft Excel 或 Numbers
+                            無亂碼開啟。</p>
+                    </div>
+
+                    <!-- 5. Quick Actions & Danger Zone Card -->
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2.5 bg-rose-50 text-rose-600 rounded-xl">
+                                <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-base">示範資料與清理專區</h3>
+                                <p class="text-xs text-slate-500">重設系統紀錄或載入範例資料</p>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row gap-3 pt-1">
+                            <button onclick="seedSampleData()"
+                                class="flex-1 py-2.5 px-4 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-2">
+                                <i data-lucide="sparkles" class="w-4 h-4"></i>
+                                <span>載入預設示範資料</span>
+                            </button>
+                            <button onclick="triggerClearAllData()"
+                                class="flex-1 py-2.5 px-4 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-2">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                <span>清空所有記帳紀錄</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 6. About & System Info Card -->
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2.5 bg-purple-50 text-purple-600 rounded-xl">
+                                <i data-lucide="info" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-base">關於 CatBud 喵算記帳</h3>
+                                <p class="text-xs text-slate-500">系統版本與離線隱私說明</p>
+                            </div>
+                        </div>
+
+                        <div class="text-xs text-slate-600 space-y-2.5 pt-1 select-text">
+                            <div class="flex justify-between py-1.5 border-b border-slate-100">
+                                <span class="text-slate-400">目前版本</span>
+                                <span class="font-semibold text-slate-700">Ver. 2.1.0 (喵力升級版)</span>
+                            </div>
+                            <div class="flex justify-between py-1.5 border-b border-slate-100">
+                                <span class="text-slate-400">資料儲存機制</span>
+                                <span class="font-semibold text-emerald-600 flex items-center gap-1"><i
+                                        data-lucide="hard-drive" class="w-3.5 h-3.5"></i> 100% 瀏覽器本機儲存
+                                    (LocalStorage)</span>
+                            </div>
+                            <div class="flex justify-between py-1.5 border-b border-slate-100">
+                                <span class="text-slate-400">隱私保護</span>
+                                <span class="font-semibold text-slate-700">完全離線運行，絕無遠端傳輸</span>
+                            </div>
+                            <div class="flex justify-between py-1.5">
+                                <span class="text-slate-400">開發與版權</span>
+                                <span class="font-semibold text-slate-700 cursor-text">趙凱樂製作©2026版權所有</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ADD / EDIT TRANSACTION PAGE -->
+            <div id="tab-add" class="tab-content hidden max-w-3xl mx-auto space-y-6">
+                <!-- Cat Companion Mood & Reaction Card -->
+                <div
+                    class="bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-amber-500/10 rounded-2xl border border-emerald-200/60 p-4 shadow-sm flex items-center gap-4">
+                    <div
+                        class="relative w-12 h-12 flex-shrink-0 flex items-center justify-center bg-white rounded-2xl shadow-sm border border-emerald-100 overflow-hidden">
+                        <span id="cat-avatar-icon" class="text-2xl select-none">🐱</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div
+                            class="cat-bubble bg-white px-4 py-2.5 rounded-2xl shadow-xs border border-slate-200/60 text-xs">
+                            <p id="cat-speech-text" class="font-medium text-slate-700 leading-relaxed">
+                                喵～今天辛苦了！記錄下一筆日常開銷或收入吧～🐾</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Form Card -->
+                <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8 space-y-6">
+                    <!-- Header -->
+                    <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2.5 bg-emerald-50 text-emerald-600 rounded-2xl">
+                                <i data-lucide="edit" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h2 id="add-page-title" class="text-xl font-bold text-slate-900 tracking-tight">
+                                    新增記帳紀錄</h2>
+                                <p class="text-xs text-slate-400 mt-0.5">記下每一分收支，邁向財務自由喵！</p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="closeAddPage()"
+                            class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all"
+                            title="關閉">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    <form id="transaction-form" onsubmit="handleFormSubmit(event, false)" class="space-y-6">
+                        <input type="hidden" id="edit-id" value="">
+                        <input type="hidden" id="transaction-type" value="expense">
+                        <input type="hidden" id="form-category" value="餐飲食品">
+                        <input type="hidden" id="form-payment" value="現金">
+
+                        <!-- 1. Type Switch (Expense / Income) -->
+                        <div class="grid grid-cols-2 gap-3 p-1.5 bg-slate-100 rounded-2xl">
+                            <button type="button" id="btn-type-expense" onclick="setType('expense')"
+                                class="py-3 rounded-xl text-sm font-bold transition-all bg-white text-rose-600 shadow-sm flex items-center justify-center space-x-2">
+                                <i data-lucide="trending-down" class="w-4 h-4"></i>
+                                <span>支出 (Expense)</span>
+                            </button>
+                            <button type="button" id="btn-type-income" onclick="setType('income')"
+                                class="py-3 rounded-xl text-sm font-bold transition-all text-slate-500 hover:text-slate-900 flex items-center justify-center space-x-2">
+                                <i data-lucide="trending-up" class="w-4 h-4"></i>
+                                <span>收入 (Income)</span>
+                            </button>
+                        </div>
+
+                        <!-- 2. Amount Input & Quick Increment Buttons -->
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <label
+                                    class="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                                    <i data-lucide="dollar-sign" class="w-4 h-4 text-emerald-600"></i>
+                                    <span>交易金額</span>
+                                </label>
+                                <span class="text-[11px] text-slate-400">點擊下方按鈕可快速加總</span>
+                            </div>
+
+                            <!-- Big Amount Input Display -->
+                            <div
+                                class="flex items-center bg-slate-50 border border-slate-200/90 rounded-2xl px-5 py-3 focus-within:ring-2 focus-within:ring-emerald-500 focus-within:bg-white transition-all">
+                                <span
+                                    class="currency-symbol-display text-slate-400 font-extrabold text-2xl select-none mr-2.5 shrink-0">$</span>
+                                <input type="number" id="form-amount" required step="any" min="0.1" placeholder="0"
+                                    oninput="onAmountInputChanged()"
+                                    class="w-full bg-transparent text-3xl font-black text-slate-800 focus:outline-none tracking-tight">
+                            </div>
+
+                            <!-- Quick Add Buttons -->
+                            <div class="grid grid-cols-6 gap-2">
+                                <button type="button" onclick="quickAddAmount(50)"
+                                    class="py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 active:scale-95 rounded-xl transition-all">+50</button>
+                                <button type="button" onclick="quickAddAmount(100)"
+                                    class="py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 active:scale-95 rounded-xl transition-all">+100</button>
+                                <button type="button" onclick="quickAddAmount(500)"
+                                    class="py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 active:scale-95 rounded-xl transition-all">+500</button>
+                                <button type="button" onclick="quickAddAmount(1000)"
+                                    class="py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 active:scale-95 rounded-xl transition-all">+1000</button>
+                                <button type="button" onclick="quickAddAmount(5000)"
+                                    class="py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 active:scale-95 rounded-xl transition-all">+5000</button>
+                                <button type="button" onclick="clearAmount()"
+                                    class="py-2 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 active:scale-95 rounded-xl transition-all">歸零
+                                    C</button>
+                            </div>
+                        </div>
+
+                        <!-- 3. Category Visual Grid -->
+                        <div class="space-y-3 pt-2 border-t border-slate-100">
+                            <div class="flex items-center justify-between">
+                                <label
+                                    class="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                                    <i data-lucide="grid" class="w-4 h-4 text-blue-600"></i>
+                                    <span>選擇分類</span>
+                                    <span class="text-emerald-600 font-semibold" id="selected-cat-badge">餐飲食品</span>
+                                </label>
+                                <button type="button"
+                                    onclick="switchTab('settings'); switchSettingsCategoryTab(document.getElementById('transaction-type').value);"
+                                    class="text-xs text-indigo-600 hover:underline flex items-center gap-1">
+                                    <i data-lucide="settings" class="w-3 h-3"></i>
+                                    <span>管理分類</span>
+                                </button>
+                            </div>
+
+                            <!-- Visual Grid of Category Cards -->
+                            <div id="add-category-grid" class="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
+                                <!-- Populated dynamically via JS -->
+                            </div>
+                        </div>
+
+                        <!-- 4. Date & Quick Shortcuts -->
+                        <div class="space-y-3 pt-2 border-t border-slate-100">
+                            <div class="flex items-center justify-between">
+                                <label
+                                    class="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                                    <i data-lucide="calendar" class="w-4 h-4 text-purple-600"></i>
+                                    <span>交易日期</span>
+                                </label>
+                                <!-- Date Chips -->
+                                <div class="flex gap-1.5">
+                                    <button type="button" onclick="setQuickDate(0)" id="btn-date-today"
+                                        class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-emerald-100 text-emerald-800 transition-all">今天</button>
+                                    <button type="button" onclick="setQuickDate(-1)" id="btn-date-yesterday"
+                                        class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all">昨天</button>
+                                    <button type="button" onclick="setQuickDate(-2)" id="btn-date-before"
+                                        class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all">前天</button>
+                                </div>
+                            </div>
+                            <input type="date" id="form-date" required
+                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
+                        </div>
+
+                        <!-- 5. Payment Method Chips -->
+                        <div class="space-y-3 pt-2 border-t border-slate-100">
+                            <label
+                                class="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                                <i data-lucide="credit-card" class="w-4 h-4 text-teal-600"></i>
+                                <span>支付方式</span>
+                            </label>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2"
+                                id="payment-chips-container">
+                                <button type="button" onclick="selectPaymentChip('現金')" data-payment="現金"
+                                    class="payment-chip py-2.5 px-3 rounded-xl border border-emerald-500 bg-emerald-50/80 text-emerald-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-all">
+                                    <span>💵 現金</span>
+                                </button>
+                                <button type="button" onclick="selectPaymentChip('信用卡')" data-payment="信用卡"
+                                    class="payment-chip py-2.5 px-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 text-xs font-medium flex items-center justify-center gap-1.5 transition-all">
+                                    <span>💳 信用卡</span>
+                                </button>
+                                <button type="button" onclick="selectPaymentChip('行動支付')" data-payment="行動支付"
+                                    class="payment-chip py-2.5 px-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 text-xs font-medium flex items-center justify-center gap-1.5 transition-all">
+                                    <span>📱 行動支付</span>
+                                </button>
+                                <button type="button" onclick="selectPaymentChip('銀行轉帳')" data-payment="銀行轉帳"
+                                    class="payment-chip py-2.5 px-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 text-xs font-medium flex items-center justify-center gap-1.5 transition-all">
+                                    <span>🏦 銀行轉帳</span>
+                                </button>
+                                <button type="button" onclick="selectPaymentChip('電子票證')" data-payment="電子票證"
+                                    class="payment-chip py-2.5 px-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 text-xs font-medium flex items-center justify-center gap-1.5 transition-all">
+                                    <span>🪪 電子票證</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 6. Quick Note Tags & Textarea -->
+                        <div class="space-y-3 pt-2 border-t border-slate-100">
+                            <div class="flex items-center justify-between">
+                                <label
+                                    class="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                                    <i data-lucide="message-square" class="w-4 h-4 text-cyan-600"></i>
+                                    <span>備註 / 說明</span>
+                                </label>
+                                <span class="text-[11px] text-slate-400">點選常用標籤快速填入</span>
+                            </div>
+
+                            <!-- Quick Note Tags -->
+                            <div class="flex flex-wrap gap-1.5" id="quick-note-tags">
+                                <button type="button" onclick="appendNoteTag('☕ 早餐')"
+                                    class="px-2.5 py-1 rounded-lg text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all">☕
+                                    早餐</button>
+                                <button type="button" onclick="appendNoteTag('🍱 午餐')"
+                                    class="px-2.5 py-1 rounded-lg text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all">🍱
+                                    午餐</button>
+                                <button type="button" onclick="appendNoteTag('🍲 晚餐')"
+                                    class="px-2.5 py-1 rounded-lg text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all">🍲
+                                    晚餐</button>
+                                <button type="button" onclick="appendNoteTag('🧋 手搖飲')"
+                                    class="px-2.5 py-1 rounded-lg text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all">🧋
+                                    手搖飲</button>
+                                <button type="button" onclick="appendNoteTag('🛒 7-11/全家')"
+                                    class="px-2.5 py-1 rounded-lg text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all">🛒
+                                    7-11/全家</button>
+                                <button type="button" onclick="appendNoteTag('🐾 貓罐頭/貓砂')"
+                                    class="px-2.5 py-1 rounded-lg text-xs bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 transition-all">🐾
+                                    貓罐頭/貓砂</button>
+                                <button type="button" onclick="appendNoteTag('⛽ 交通加油')"
+                                    class="px-2.5 py-1 rounded-lg text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all">⛽
+                                    交通加油</button>
+                                <button type="button" onclick="appendNoteTag('🛍️ 蝦皮網購')"
+                                    class="px-2.5 py-1 rounded-lg text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all">🛍️
+                                    蝦皮網購</button>
+                            </div>
+
+                            <textarea id="form-note" rows="2" placeholder="詳細備註，例如：和同事吃午餐、買貓咪化毛膏、領取月薪..."
+                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all resize-none"></textarea>
+                        </div>
+
+                        <!-- 7. Action Buttons -->
+                        <div class="pt-4 flex flex-col sm:flex-row gap-3 border-t border-slate-100">
+                            <button type="button" onclick="closeAddPage()"
+                                class="order-3 sm:order-1 sm:w-1/4 py-3.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl transition-all flex items-center justify-center space-x-1.5">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                                <span>取消</span>
+                            </button>
+                            <button type="button" id="btn-save-another" onclick="handleFormSubmit(event, true)"
+                                class="order-2 sm:order-2 flex-1 py-3.5 px-4 bg-emerald-100/70 hover:bg-emerald-200/80 active:scale-[0.98] text-emerald-800 font-bold rounded-2xl transition-all flex items-center justify-center space-x-2">
+                                <i data-lucide="plus-circle" class="w-5 h-5 text-emerald-600"></i>
+                                <span>再記一筆</span>
+                            </button>
+                            <button type="submit"
+                                class="order-1 sm:order-3 flex-1 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-bold rounded-2xl shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center space-x-2">
+                                <i data-lucide="check" class="w-5 h-5 stroke-[2.5]"></i>
+                                <span>儲存紀錄</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+
+    <!-- Bottom Navigation Bar (Visible when aspect-ratio < 4/3) -->
+    <nav id="app-bottom-nav"
+        class="app-bottom-nav fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-[0_-4px_25px_rgba(0,0,0,0.08)] select-none">
+        <div class="max-w-md md:max-w-lg mx-auto px-4 h-20 flex items-center justify-between relative">
+            <!-- 首頁 -->
+            <button onclick="switchTab('dashboard')" id="nav-bottom-dashboard" tabindex="-1"
+                class="nav-item-bottom flex flex-col items-center justify-center flex-1 py-1 text-emerald-600 font-bold transition-all group focus:outline-none">
+                <i data-lucide="home" class="w-6 h-6 transition-transform group-hover:scale-110"></i>
+                <span class="text-xs mt-1 font-semibold">首頁</span>
+            </button>
+
+            <!-- 明細 -->
+            <button onclick="switchTab('transactions')" id="nav-bottom-transactions" tabindex="-1"
+                class="nav-item-bottom flex flex-col items-center justify-center flex-1 py-1 text-slate-400 hover:text-slate-600 font-medium transition-all group focus:outline-none">
+                <i data-lucide="list" class="w-6 h-6 transition-transform group-hover:scale-110"></i>
+                <span class="text-xs mt-1 font-semibold">明細</span>
+            </button>
+
+            <!-- 中心突出加大新增按鈕 (+) -->
+            <div class="flex-1 flex justify-center items-center">
+                <button onclick="openAddPage()" tabindex="-1"
+                    class="w-16 h-16 -translate-y-5 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white rounded-full flex items-center justify-center shadow-xl shadow-emerald-500/35 border-4 border-white transition-all transform hover:scale-105 focus:outline-none"
+                    title="新增記帳">
+                    <i data-lucide="plus" class="w-8 h-8 stroke-[2.5]"></i>
+                </button>
+            </div>
+
+            <!-- 統計 -->
+            <button onclick="switchTab('analytics')" id="nav-bottom-analytics" tabindex="-1"
+                class="nav-item-bottom flex flex-col items-center justify-center flex-1 py-1 text-slate-400 hover:text-slate-600 font-medium transition-all group focus:outline-none">
+                <i data-lucide="pie-chart" class="w-6 h-6 transition-transform group-hover:scale-110"></i>
+                <span class="text-xs mt-1 font-semibold">統計</span>
+            </button>
+
+            <!-- 設定 -->
+            <button onclick="switchTab('settings')" id="nav-bottom-settings" tabindex="-1"
+                class="nav-item-bottom flex flex-col items-center justify-center flex-1 py-1 text-slate-400 hover:text-slate-600 font-medium transition-all group focus:outline-none">
+                <i data-lucide="settings" class="w-6 h-6 transition-transform group-hover:scale-110"></i>
+                <span class="text-xs mt-1 font-semibold">設定</span>
+            </button>
+        </div>
+    </nav>
+
+
+
+    <!-- BUDGET MODAL -->
+    <div id="budget-modal"
+        class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h3 class="font-bold text-slate-800 text-lg">設定每月支出預算</h3>
+                <button onclick="closeBudgetModal()" class="text-slate-400 hover:text-slate-600 rounded-lg p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">每月預算金額 (NT$)</label>
+                    <input type="number" id="budget-input" min="0" step="500"
+                        class="w-full px-4 py-2.5 text-lg font-semibold bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <button onclick="saveBudget()"
+                    class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-md transition-all">
+                    更新預算
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CATEGORY MODAL -->
+    <div id="category-modal"
+        class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div
+            class="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-slate-100 overflow-hidden transform transition-all">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/70">
+                <div class="flex items-center space-x-2.5">
+                    <div class="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+                        <i data-lucide="tag" class="w-4 h-4"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-800 text-base">新增自訂分類</h3>
+                </div>
+                <button onclick="closeCategoryModal()"
+                    class="text-slate-400 hover:text-slate-600 rounded-xl p-1 transition-all">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form onsubmit="handleCreateCategory(event)" class="p-6 space-y-4">
+                <!-- Type Selection -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">分類所屬類型</label>
+                    <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl">
+                        <button type="button" onclick="setModalCategoryType('expense')" id="modal-cat-type-expense"
+                            class="py-2 rounded-lg text-xs font-bold bg-white text-rose-600 shadow-sm transition-all">支出分類</button>
+                        <button type="button" onclick="setModalCategoryType('income')" id="modal-cat-type-income"
+                            class="py-2 rounded-lg text-xs font-medium text-slate-500 hover:text-slate-800 transition-all">收入分類</button>
+                    </div>
+                    <input type="hidden" id="modal-category-type" value="expense">
+                </div>
+
+                <!-- Category Name -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">分類名稱 *</label>
+                    <input type="text" id="modal-category-name" required maxlength="8" placeholder="例如：手搖飲料、寵物用品、外送..."
+                        class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium text-slate-800">
+                </div>
+
+                <!-- Icon Selection -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">挑選圖示</label>
+                    <div class="grid grid-cols-8 gap-2 p-2 bg-slate-50 border border-slate-200 rounded-xl"
+                        id="modal-icon-selector">
+                        <!-- Populated by JS -->
+                    </div>
+                    <input type="hidden" id="modal-category-icon" value="paw-print">
+                </div>
+
+                <!-- Color Selection -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">挑選主題代表色</label>
+                    <div class="flex items-center gap-2.5 p-2 bg-slate-50 border border-slate-200 rounded-xl"
+                        id="modal-color-selector">
+                        <!-- Populated by JS -->
+                    </div>
+                    <input type="hidden" id="modal-category-color" value="#f97316">
+                </div>
+
+                <!-- Actions -->
+                <div class="pt-2 flex gap-2">
+                    <button type="button" onclick="closeCategoryModal()"
+                        class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all">取消</button>
+                    <button type="submit"
+                        class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5">
+                        <i data-lucide="check" class="w-4 h-4"></i>
+                        <span>確認新增分類</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- CONFIRMATION MODAL -->
+    <div id="confirm-modal"
+        class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-xs rounded-2xl shadow-xl border border-slate-100 p-6 text-center space-y-4">
+            <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto">
+                <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <h3 class="font-bold text-slate-800 text-base">確定要刪除這筆紀錄？</h3>
+                <p class="text-xs text-slate-500 mt-1">此動作無法復原。</p>
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="closeConfirmModal()"
+                    class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all">取消</button>
+                <button id="confirm-delete-btn"
+                    class="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all">刪除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CLEAR ALL CONFIRMATION MODAL -->
+    <div id="clear-all-modal"
+        class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-xs rounded-2xl shadow-xl border border-slate-100 p-6 text-center space-y-4">
+            <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto">
+                <i data-lucide="alert-octagon" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <h3 class="font-bold text-slate-800 text-base">確定要清空所有資料？</h3>
+                <p class="text-xs text-slate-500 mt-1">此動作將刪除所有記帳紀錄且無法復原。</p>
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="closeClearAllModal()"
+                    class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all">取消</button>
+                <button onclick="confirmClearAllData()"
+                    class="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all">確認清空</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

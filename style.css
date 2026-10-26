@@ -1,0 +1,118 @@
+body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+.select-text {
+    user-select: text !important;
+    -webkit-user-select: text !important;
+}
+
+/* Base / Mobile Navigation & Layout */
+.app-sidebar {
+    display: none;
+}
+.app-top-header {
+    display: block;
+}
+.app-bottom-nav {
+    display: block;
+}
+.app-main {
+    padding-bottom: 9.5rem !important;
+}
+
+/* Desktop Layout (min-aspect-ratio: 4/3 or min-width: 1024px) */
+@media (min-aspect-ratio: 4/3), (min-width: 1024px) {
+    html, body {
+        height: 100vh;
+        overflow: hidden;
+    }
+    .app-layout {
+        flex-direction: row !important;
+        height: 100vh;
+        max-height: 100vh;
+        overflow: hidden !important;
+    }
+    .app-sidebar {
+        display: flex !important;
+        width: 17.5rem;
+        min-width: 17.5rem;
+        height: 100vh;
+        max-height: 100vh;
+        flex-shrink: 0;
+        position: sticky;
+        top: 0;
+        overflow-y: auto;
+    }
+    .app-top-header {
+        display: none !important;
+    }
+    .app-bottom-nav {
+        display: none !important;
+    }
+    .app-main {
+        flex: 1;
+        height: 100vh;
+        max-height: 100vh;
+        overflow-y: auto;
+        padding-bottom: 6rem !important;
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+}
+
+/* Category Grid Card Styles */
+.cat-item-btn {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.cat-item-btn:hover {
+    transform: translateY(-2px);
+}
+.cat-item-btn:active {
+    transform: scale(0.95);
+}
+.cat-item-btn.selected {
+    transform: translateY(-2px);
+}
+
+/* Speech Bubble Tail */
+.cat-bubble {
+    position: relative;
+}
+.cat-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 28px;
+    border-width: 8px 8px 0;
+    border-style: solid;
+    border-color: #f8fafc transparent;
+    display: block;
+    width: 0;
+}
+
+/* Remove number input spinner buttons for clean financial display */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+
