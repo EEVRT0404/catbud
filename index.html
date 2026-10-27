@@ -338,6 +338,8 @@
                             <h3 id="account-heading" class="font-bold text-slate-800 text-base">Google 帳號</h3>
                             <p id="auth-status" class="text-xs text-slate-500" role="status" aria-live="polite">
                                 正在確認登入狀態...</p>
+                            <p id="sync-status" class="text-xs text-slate-500" role="status" aria-live="polite">
+                                雲端同步尚未啟動</p>
                         </div>
                     </div>
                     <div class="flex flex-wrap items-center gap-3">
@@ -350,8 +352,9 @@
                             登出
                         </button>
                     </div>
-                    <p class="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl p-3">
-                        登入目前只用於確認帳號身份；記帳資料仍儲存在此瀏覽器，尚未同步到雲端。
+                    <p id="sync-description"
+                        class="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl p-3">
+                        登入後會使用 Firestore 同步此帳號的記帳資料；尚未登入時，資料只保存在此瀏覽器。
                     </p>
                 </section>
 

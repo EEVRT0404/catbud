@@ -166,7 +166,47 @@ function saveToLocalStorage() {
     localStorage.setItem('monthly_budget', budgetTarget.toString());
     localStorage.setItem('catmoney_categories', JSON.stringify(CATEGORIES));
     localStorage.setItem('catmoney_prefs', JSON.stringify(userPrefs));
+
+    window.dispatchEvent(new CustomEvent('meowtabs:local-data-changed', {
+        detail: getAppDataSnapshot()
+    }));
 }
+
+function getAppDataSnapshot() {
+    return {
+        transactions,
+        budgetTarget,
+        categories: CATEGORIES,
+        preferences: userPrefs
+    };
+}
+
+window.addEventListener('meowtabs:cloud-data-loaded', event => {
+    const cloudData = event.detail;
+    if (!cloudData || !Array.isArray(cloudData.transactions)) {
+        console.error('Cloud sync returned invalid app data.');
+        showToast('雲端資料格式不正確，未載入資料。', 'error');
+        return;
+    }
+
+    transactions = cloudData.transactions;
+    if (Number.isFinite(cloudData.budgetTarget)) budgetTarget = cloudData.budgetTarget;
+    if (cloudData.categories && Array.isArray(cloudData.categories.expense) &&
+        Array.isArray(cloudData.categories.income)) {
+        CATEGORIES = cloudData.categories;
+    }
+    if (cloudData.preferences && typeof cloudData.preferences === 'object') {
+        userPrefs = cloudData.preferences;
+    }
+
+    localStorage.setItem('transactions', JSON.stringify(transactions));
+    localStorage.setItem('monthly_budget', budgetTarget.toString());
+    localStorage.setItem('catmoney_categories', JSON.stringify(CATEGORIES));
+    localStorage.setItem('catmoney_prefs', JSON.stringify(userPrefs));
+    applyPreferencesToUI();
+    populateCategoryFilterOptions();
+    switchTab(activeTab, false);
+});
 
 function getCategoryMeta(categoryName, type = 'expense') {
     const list = (CATEGORIES[type] || []).concat(CATEGORIES[type === 'expense' ? 'income' : 'expense'] || []);
