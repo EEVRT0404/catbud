@@ -56,6 +56,7 @@ let writeQueue = Promise.resolve();
 let pendingLocalData = null;
 let pendingLocalBaseData = null;
 let authFallbackData = null;
+let lastSyncError = null;
 
 function setStatus(message, isError = false) {
     statusElement.textContent = message;
@@ -64,6 +65,10 @@ function setStatus(message, isError = false) {
 }
 
 function setSyncStatus(message, isError = false) {
+    if (!isError && lastSyncError) {
+        message = `同步失敗：${lastSyncError}`;
+        isError = true;
+    }
     syncStatusElement.textContent = message;
     syncStatusElement.classList.toggle('text-rose-600', isError);
     syncStatusElement.classList.toggle('text-emerald-600', !isError);
@@ -135,6 +140,15 @@ function applyCloudData(data) {
     const normalizedData = normalizeData(data);
     latestLocalData = normalizedData;
     lastSyncedData = normalizedData;
+    latestLocalSignature = signature(normalizedData);
+    window.dispatchEvent(new CustomEvent('meowtabs:cloud-data-loaded', {
+        detail: normalizedData
+    }));
+}
+
+function applyLocalOverlay(data) {
+    const normalizedData = normalizeData(data);
+    latestLocalData = normalizedData;
     latestLocalSignature = signature(normalizedData);
     window.dispatchEvent(new CustomEvent('meowtabs:cloud-data-loaded', {
         detail: normalizedData
@@ -258,7 +272,25 @@ async function fetchCloudData(uid, fallbackData) {
 
 function handleSyncError(error, action) {
     console.error(`Firestore ${action} failed:`, error);
-    setSyncStatus(`同步失敗：${error.message}`, true);
+    lastSyncError = `${action}：${error.message}`;
+    setSyncStatus(`同步失敗：${lastSyncError}`, true);
+}
+
+function reconcileRemoteData(remoteData) {
+    if (!pendingLocalData) return remoteData;
+
+    const mergedData = mergeLocalChanges(
+        pendingLocalBaseData || lastSyncedData || remoteData,
+        pendingLocalData,
+        remoteData
+    );
+    if (signature(mergedData) === signature(remoteData)) {
+        pendingLocalData = null;
+        pendingLocalBaseData = null;
+        lastSyncError = null;
+        return remoteData;
+    }
+    return mergedData;
 }
 
 function applyLatestRemoteData() {
@@ -276,7 +308,11 @@ function applyLatestRemoteData() {
 
     try {
         const remoteData = getCloudData(remoteSettings, remoteTransactions, readLocalData());
-        if (signature(remoteData) !== latestLocalSignature) applyCloudData(remoteData);
+        const reconciledData = reconcileRemoteData(remoteData);
+        if (signature(reconciledData) !== latestLocalSignature) {
+            if (reconciledData === remoteData) applyCloudData(remoteData);
+            else applyLocalOverlay(reconciledData);
+        }
         setSyncStatus('雲端同步中');
     } catch (error) {
         handleSyncError(error, 'read');
@@ -290,8 +326,12 @@ async function refreshCloudData(uid) {
         syncReady = false;
         return;
     }
-    if (activeUserId === uid && signature(cloudData) !== latestLocalSignature) {
-        applyCloudData(cloudData);
+    if (activeUserId === uid) {
+        const reconciledData = reconcileRemoteData(cloudData);
+        if (signature(reconciledData) !== latestLocalSignature) {
+            if (reconciledData === cloudData) applyCloudData(cloudData);
+            else applyLocalOverlay(reconciledData);
+        }
     }
 }
 
@@ -314,6 +354,7 @@ onAuthStateChanged(auth, async user => {
     latestLocalData = null;
     lastSyncedData = null;
     authFallbackData = null;
+    lastSyncError = null;
     pendingLocalData = queuedInitialData;
     pendingLocalBaseData = queuedInitialBaseData;
     writeQueue = Promise.resolve();
@@ -378,13 +419,21 @@ onAuthStateChanged(auth, async user => {
             ? '已載入雲端資料，正在保持同步'
             : '本機資料已首次備份至雲端');
 
-        unsubscribeSettings = onSnapshot(getSettingsRef(userId), snapshot => {
+        unsubscribeSettings = onSnapshot(getSettingsRef(userId), { includeMetadataChanges: true }, snapshot => {
+            if (snapshot.metadata.fromCache || snapshot.metadata.hasPendingWrites) {
+                remoteNeedsRefresh = true;
+                return;
+            }
             remoteSettingsLoaded = true;
             remoteSettings = snapshot.exists() ? snapshot.data() : null;
             applyLatestRemoteData();
         }, error => handleSyncError(error, 'settings listener'));
 
-        unsubscribeTransactions = onSnapshot(getTransactionsRef(userId), snapshot => {
+        unsubscribeTransactions = onSnapshot(getTransactionsRef(userId), { includeMetadataChanges: true }, snapshot => {
+            if (snapshot.metadata.fromCache || snapshot.metadata.hasPendingWrites) {
+                remoteNeedsRefresh = true;
+                return;
+            }
             remoteTransactionsLoaded = true;
             remoteTransactions = snapshot.docs.map(transactionDoc => ({
                 ...transactionDoc.data(),
@@ -430,6 +479,8 @@ window.addEventListener('meowtabs:local-data-changed', event => {
 
     if (signature(nextData) === latestLocalSignature) return;
 
+    if (!pendingLocalData) pendingLocalBaseData = lastSyncedData || latestLocalData;
+    pendingLocalData = nextData;
     latestLocalData = nextData;
     latestLocalSignature = signature(nextData);
     const userId = activeUserId;
@@ -441,6 +492,7 @@ window.addEventListener('meowtabs:local-data-changed', event => {
         if (activeUserId !== userId) return;
         await commitOperations(getWriteOperations(lastSyncedData, nextData, userId));
         lastSyncedData = nextData;
+        lastSyncError = null;
     }).catch(error => {
         writeFailed = true;
         handleSyncError(error, 'write');
