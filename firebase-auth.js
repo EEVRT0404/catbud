@@ -38,6 +38,8 @@ const signInButton = document.getElementById('google-sign-in');
 const signOutButton = document.getElementById('google-sign-out');
 
 let activeUserId = null;
+let authStateResolved = false;
+let authInitializationId = 0;
 let unsubscribeSettings = null;
 let unsubscribeTransactions = null;
 let syncReady = false;
@@ -51,6 +53,9 @@ let latestLocalData = null;
 let lastSyncedData = null;
 let latestLocalSignature = '';
 let writeQueue = Promise.resolve();
+let pendingLocalData = null;
+let pendingLocalBaseData = null;
+let authFallbackData = null;
 
 function setStatus(message, isError = false) {
     statusElement.textContent = message;
@@ -116,6 +121,8 @@ function readLocalData() {
     });
 }
 
+const initialLocalData = normalizeData(window.meowtabsInitialData || readLocalData());
+
 function getSettingsRef(uid) {
     return doc(db, 'users', uid, 'appData', 'settings');
 }
@@ -142,6 +149,41 @@ function getCloudData(settings, transactions, fallbackData) {
             : fallbackData.budgetTarget,
         categories: settings?.categories ?? fallbackData.categories,
         preferences: settings?.preferences ?? fallbackData.preferences
+    });
+}
+
+function mergeLocalChanges(baseData, localData, remoteData) {
+    const baseTransactions = new Map(
+        baseData.transactions.map(transaction => [transaction.id, transaction])
+    );
+    const localTransactions = new Map(
+        localData.transactions.map(transaction => [transaction.id, transaction])
+    );
+    const deletedIds = new Set(
+        [...baseTransactions.keys()].filter(id => !localTransactions.has(id))
+    );
+    const changedTransactions = localData.transactions.filter(transaction => {
+        const baseTransaction = baseTransactions.get(transaction.id);
+        return !baseTransaction || JSON.stringify(baseTransaction) !== JSON.stringify(transaction);
+    });
+    const changedIds = new Set(changedTransactions.map(transaction => transaction.id));
+
+    return normalizeData({
+        transactions: [
+            ...changedTransactions,
+            ...remoteData.transactions.filter(transaction =>
+                !deletedIds.has(transaction.id) && !changedIds.has(transaction.id)
+            )
+        ],
+        budgetTarget: localData.budgetTarget !== baseData.budgetTarget
+            ? localData.budgetTarget
+            : remoteData.budgetTarget,
+        categories: JSON.stringify(localData.categories) !== JSON.stringify(baseData.categories)
+            ? localData.categories
+            : remoteData.categories,
+        preferences: JSON.stringify(localData.preferences) !== JSON.stringify(baseData.preferences)
+            ? localData.preferences
+            : remoteData.preferences
     });
 }
 
@@ -254,6 +296,10 @@ async function refreshCloudData(uid) {
 }
 
 onAuthStateChanged(auth, async user => {
+    const initializationId = ++authInitializationId;
+    const queuedInitialData = authStateResolved ? null : pendingLocalData;
+    const queuedInitialBaseData = authStateResolved ? null : pendingLocalBaseData;
+    authStateResolved = true;
     if (unsubscribeSettings) unsubscribeSettings();
     if (unsubscribeTransactions) unsubscribeTransactions();
     unsubscribeSettings = null;
@@ -267,6 +313,9 @@ onAuthStateChanged(auth, async user => {
     remoteNeedsRefresh = false;
     latestLocalData = null;
     lastSyncedData = null;
+    authFallbackData = null;
+    pendingLocalData = queuedInitialData;
+    pendingLocalBaseData = queuedInitialBaseData;
     writeQueue = Promise.resolve();
     activeUserId = user ? user.uid : null;
 
@@ -274,6 +323,8 @@ onAuthStateChanged(auth, async user => {
     signOutButton.classList.toggle('hidden', !user);
 
     if (!user) {
+        pendingLocalData = null;
+        pendingLocalBaseData = null;
         setStatus('尚未登入');
         setSyncStatus('登入後即可開始雲端同步');
         return;
@@ -285,20 +336,47 @@ onAuthStateChanged(auth, async user => {
 
     try {
         const fallbackData = readLocalData();
+        authFallbackData = fallbackData;
         const cloudData = await fetchCloudData(userId, fallbackData);
-        if (activeUserId !== userId) return;
+        if (activeUserId !== userId || initializationId !== authInitializationId) return;
 
-        if (cloudData) {
-            applyCloudData(cloudData);
-            setSyncStatus('已載入雲端資料，正在保持同步');
-        } else {
-            latestLocalData = fallbackData;
-            lastSyncedData = fallbackData;
-            latestLocalSignature = signature(fallbackData);
-            await commitOperations(getWriteOperations(null, fallbackData, userId));
-            if (activeUserId !== userId) return;
-            setSyncStatus('本機資料已首次備份至雲端');
+        let initialData = mergeLocalChanges(
+            initialLocalData,
+            fallbackData,
+            cloudData || fallbackData
+        );
+        if (pendingLocalData) {
+            initialData = mergeLocalChanges(
+                pendingLocalBaseData || fallbackData,
+                pendingLocalData,
+                initialData
+            );
+            pendingLocalData = null;
+            pendingLocalBaseData = null;
         }
+
+        if (!cloudData || signature(initialData) !== signature(cloudData)) {
+            await commitOperations(getWriteOperations(cloudData, initialData, userId));
+            if (activeUserId !== userId || initializationId !== authInitializationId) return;
+        }
+
+        while (pendingLocalData) {
+            const latestPendingData = pendingLocalData;
+            const latestPendingBaseData = pendingLocalBaseData || fallbackData;
+            pendingLocalData = null;
+            pendingLocalBaseData = null;
+            const nextData = mergeLocalChanges(latestPendingBaseData, latestPendingData, initialData);
+            if (signature(nextData) !== signature(initialData)) {
+                await commitOperations(getWriteOperations(initialData, nextData, userId));
+                if (activeUserId !== userId || initializationId !== authInitializationId) return;
+            }
+            initialData = nextData;
+        }
+
+        applyCloudData(initialData);
+        setSyncStatus(cloudData
+            ? '已載入雲端資料，正在保持同步'
+            : '本機資料已首次備份至雲端');
 
         unsubscribeSettings = onSnapshot(getSettingsRef(userId), snapshot => {
             remoteSettingsLoaded = true;
@@ -326,13 +404,27 @@ onAuthStateChanged(auth, async user => {
 });
 
 window.addEventListener('meowtabs:local-data-changed', event => {
-    if (!activeUserId || !syncReady) return;
-
     let nextData;
     try {
         nextData = normalizeData(event.detail);
     } catch (error) {
         handleSyncError(error, 'prepare');
+        return;
+    }
+
+    if (!authStateResolved) {
+        if (!pendingLocalData) pendingLocalBaseData = initialLocalData;
+        pendingLocalData = nextData;
+        return;
+    }
+
+    if (!activeUserId) return;
+
+    if (!syncReady) {
+        if (!pendingLocalData) {
+            pendingLocalBaseData = authFallbackData || initialLocalData;
+        }
+        pendingLocalData = nextData;
         return;
     }
 

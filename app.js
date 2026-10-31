@@ -181,6 +181,8 @@ function getAppDataSnapshot() {
     };
 }
 
+window.meowtabsInitialData = JSON.parse(JSON.stringify(getAppDataSnapshot()));
+
 window.addEventListener('meowtabs:cloud-data-loaded', event => {
     const cloudData = event.detail;
     if (!cloudData || !Array.isArray(cloudData.transactions)) {
