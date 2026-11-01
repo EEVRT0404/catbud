@@ -96,6 +96,26 @@ let deleteTargetId = null;
 let dashChartType = 'expense';
 let settingsCategoryTab = 'expense';
 
+const TAB_URL_NAMES = {
+    dashboard: 'Home',
+    transactions: 'Details',
+    add: 'New',
+    analytics: 'Chart',
+    settings: 'Settings'
+};
+
+const URL_TAB_NAMES = {
+    Home: 'dashboard',
+    Details: 'transactions',
+    New: 'add',
+    Chart: 'analytics',
+    Settings: 'settings'
+};
+
+function getTabIdFromHash(hash) {
+    return URL_TAB_NAMES[hash] || (document.getElementById(`tab-${hash}`) ? hash : '');
+}
+
 // Chart instances
 let dashCategoryChart = null;
 let analyticsCategoryChart = null;
@@ -120,11 +140,11 @@ window.onload = function () {
     renderTransactions();
 
     // 讀取先前儲存或 URL 指定的頁籤，避免重新整理時跳回首頁
-    const hashTab = window.location.hash.replace('#', '');
+    const hashTab = getTabIdFromHash(window.location.hash.slice(1));
     const savedTab = localStorage.getItem('catmoney_active_tab');
     let targetTab = 'dashboard';
 
-    if (hashTab && document.getElementById(`tab-${hashTab}`)) {
+    if (hashTab) {
         targetTab = hashTab;
     } else if (savedTab && document.getElementById(`tab-${savedTab}`)) {
         targetTab = savedTab;
@@ -133,7 +153,7 @@ window.onload = function () {
     if (targetTab === 'add') {
         openAddPage();
     } else {
-        switchTab(targetTab, false);
+        switchTab(targetTab);
     }
 
     lucide.createIcons();
@@ -141,8 +161,8 @@ window.onload = function () {
 
 // 監聽瀏覽器上一頁/下一頁切換
 window.addEventListener('hashchange', function () {
-    const hashTab = window.location.hash.replace('#', '');
-    if (hashTab && document.getElementById(`tab-${hashTab}`) && activeTab !== hashTab) {
+    const hashTab = getTabIdFromHash(window.location.hash.slice(1));
+    if (hashTab && activeTab !== hashTab) {
         if (hashTab === 'add') {
             openAddPage();
         } else {
@@ -222,16 +242,17 @@ function getCategoryMeta(categoryName, type = 'expense') {
 // ==========================================
 function switchTab(tabId, updateHash = true) {
     activeTab = tabId;
+    const urlTabName = TAB_URL_NAMES[tabId] || tabId;
 
     // 儲存目前分頁至 LocalStorage，重整時可還原
     localStorage.setItem('catmoney_active_tab', tabId);
 
     // 更新 URL Hash 方便書籤或瀏覽歷史
-    if (updateHash && window.location.hash !== `#${tabId}`) {
+    if (updateHash && window.location.hash !== `#${urlTabName}`) {
         try {
-            history.replaceState(null, '', `#${tabId}`);
+            history.replaceState(null, '', `#${urlTabName}`);
         } catch (e) {
-            window.location.hash = tabId;
+            window.location.hash = urlTabName;
         }
     }
 
